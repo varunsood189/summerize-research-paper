@@ -46,7 +46,6 @@ const RESEARCH_HOSTS = new Set([
   'www.ncbi.nlm.nih.gov',
   'pubmed.ncbi.nlm.nih.gov',
   'www.nature.com',
-  'www.semanticscholar.org',
 ]);
 
 function isResearchRelatedHost() {
@@ -69,10 +68,7 @@ function isResearchRelatedHost() {
 
 function shouldRunOnThisPage() {
   const p = window.location.protocol;
-  if (p !== 'http:' && p !== 'https:') return false;
-  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-    return true;
-  return true;
+  return p === 'http:' || p === 'https:';
 }
 
 /** Strip fragments (e.g. #:~:text=…) and normalize PMC article URLs. */

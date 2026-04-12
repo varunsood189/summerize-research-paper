@@ -16,7 +16,7 @@ Chrome extension (Manifest V3) that summarizes **research articles and research-
 ## Install (developer / unpacked)
 
 1. Clone or download this repo.
-2. Add extension icons under `icons/` (`icon16.png`, `icon48.png`, `icon128.png`) as referenced in `manifest.json`, or update `manifest.json` to match your assets.
+2. The repo includes simple placeholder icons under `icons/` (`icon16.png`, `icon48.png`, `icon128.png`). Replace them with your own assets if you prefer, or update `manifest.json` to match different filenames.
 3. Open `chrome://extensions`, enable **Developer mode**, click **Load unpacked**, and select this folder.
 
 ## Usage
@@ -69,4 +69,4 @@ icons/             # Extension icons (add these locally)
 
 ## License
 
-Specify your license here (e.g. MIT) if you publish the repo.
+[MIT](LICENSE) — see `LICENSE` in the repository root.
