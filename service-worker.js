@@ -15,14 +15,18 @@ function citationRetrievedDateForPrompts() {
   });
 }
 
-async function callGeminiGenerateContent(apiKey, promptText) {
+async function callGeminiGenerateContent(apiKey, promptText, generationConfig) {
   const url = `https://generativelanguage.googleapis.com/v1/models/${GEMINI_MODEL}:generateContent?key=${encodeURIComponent(apiKey)}`;
+  const body = {
+    contents: [{ parts: [{ text: promptText }] }],
+  };
+  if (generationConfig && typeof generationConfig === 'object') {
+    body.generationConfig = generationConfig;
+  }
   const response = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      contents: [{ parts: [{ text: promptText }] }],
-    }),
+    body: JSON.stringify(body),
   });
   const result = await response.json();
   if (!response.ok) {
@@ -56,9 +60,18 @@ function buildSourceMetadataBlock(p, asSite, retrievedDateStr) {
 
 function extractJsonFromGeminiText(textContent) {
   let t = String(textContent).trim();
-  const fence = t.match(/^```(?:json)?\s*([\s\S]*?)```$/m);
+  const fence = t.match(/```(?:json)?\s*([\s\S]*?)```/);
   if (fence) t = fence[1].trim();
-  return JSON.parse(t);
+  try {
+    return JSON.parse(t);
+  } catch (e) {
+    const start = t.indexOf('{');
+    const end = t.lastIndexOf('}');
+    if (start >= 0 && end > start) {
+      return JSON.parse(t.slice(start, end + 1));
+    }
+    throw e;
+  }
 }
 
 function normalizeGeminiSummary(raw, asSite) {
@@ -66,19 +79,20 @@ function normalizeGeminiSummary(raw, asSite) {
   const insights = Array.isArray(raw?.insights)
     ? raw.insights.map(String).filter((s) => s.trim())
     : [];
-  let summaryType =
-    raw?.summaryType === 'website_or_portal'
-      ? 'website_or_portal'
-      : raw?.summaryType === 'research_article'
-        ? 'research_article'
-        : null;
-  if (!summaryType) summaryType = asSite ? 'website_or_portal' : 'research_article';
+  // Pipeline mode wins — the model sometimes mislabels blogs/recipes as research_article.
+  const summaryType = asSite ? 'website_or_portal' : 'research_article';
   const defaultLabel =
     summaryType === 'website_or_portal' ? 'Website / portal page' : 'Research article';
-  const summaryTypeLabel =
+  let summaryTypeLabel =
     typeof raw?.summaryTypeLabel === 'string' && raw.summaryTypeLabel.trim()
       ? raw.summaryTypeLabel.trim()
       : defaultLabel;
+  const modelType = raw?.summaryType;
+  const modelMismatch =
+    (asSite && modelType === 'research_article') || (!asSite && modelType === 'website_or_portal');
+  if (modelMismatch) {
+    summaryTypeLabel = defaultLabel;
+  }
   const cit = raw?.citations && typeof raw.citations === 'object' ? raw.citations : {};
   const citations = {
     apa: typeof cit.apa === 'string' ? cit.apa.trim() : '',
@@ -531,11 +545,24 @@ async function enrichPaperMeta(paper) {
   return enrichPaperFromArxiv(paper);
 }
 
+function hasScholarlyMetadataSignals(p) {
+  if (!p) return false;
+  if (p.arxivId || p.pmcId || p.pmid) return true;
+  if (p.source === 'arXiv' || p.source === 'PMC' || p.source === 'Nature') return true;
+  if ((p.doi || '').trim()) return true;
+  if ((p.citationJournal || '').trim()) return true;
+  return false;
+}
+
 function shouldSummarizeAsWebsitePage(p) {
   if (!p) return true;
-  if (p.pageKind === 'article') return false;
   if (p.pageKind === 'webpage' || p.source === 'WebPage') return true;
   if (p.source === 'Generic PDF' || p.pageKind === 'pdf') return true;
+  // Blogs/recipes often expose citation_title without DOI, journal, or venue — not a research paper.
+  if (p.pageKind === 'article' && p.source === 'WebArticle' && !hasScholarlyMetadataSignals(p)) {
+    return true;
+  }
+  if (p.pageKind === 'article') return false;
   const absLen = (p.abstract || '').trim().length;
   if (absLen < 80 && (p.content || '').trim().length > 400) return true;
   return false;
@@ -609,7 +636,9 @@ async function handleSummarization(paper, apiKey) {
   const metaBlock = buildSourceMetadataBlock(p, asSite, retrievedDateStr);
 
   const jsonInstructions = `
-    Respond in JSON only (no markdown code fences):
+    Respond with a single JSON object only (no markdown, no code fences, no text before or after).
+    All string values must be valid JSON: escape internal double quotes as \\" and use \\n for newlines inside "main" if needed.
+    Shape:
     {
       "summaryType": "research_article" | "website_or_portal",
       "summaryTypeLabel": "Short label for the user, e.g. Research article or Website overview",
@@ -654,7 +683,9 @@ async function handleSummarization(paper, apiKey) {
     ${jsonInstructions}
   `;
 
-  const textContent = await callGeminiGenerateContent(apiKey, prompt);
+  const textContent = await callGeminiGenerateContent(apiKey, prompt, {
+    responseMimeType: 'application/json',
+  });
 
   try {
     const raw = extractJsonFromGeminiText(textContent);

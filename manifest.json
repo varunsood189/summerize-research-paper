@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "ResearchPulse",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Summarize research articles and research-related web pages, with Q&A and citations, powered by Gemini.",
   "permissions": [
     "sidePanel",
