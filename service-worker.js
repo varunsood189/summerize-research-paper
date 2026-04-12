@@ -15,8 +15,35 @@ function citationRetrievedDateForPrompts() {
   });
 }
 
+/** JSON Schema for summary responses (used with v1beta structured output). */
+const SUMMARY_RESPONSE_JSON_SCHEMA = {
+  type: 'object',
+  properties: {
+    summaryType: {
+      type: 'string',
+      enum: ['research_article', 'website_or_portal'],
+    },
+    summaryTypeLabel: { type: 'string' },
+    main: { type: 'string' },
+    insights: {
+      type: 'array',
+      items: { type: 'string' },
+    },
+    citations: {
+      type: 'object',
+      properties: {
+        apa: { type: 'string' },
+        mla: { type: 'string' },
+        retrievedNote: { type: 'string' },
+      },
+      required: ['apa', 'mla', 'retrievedNote'],
+    },
+  },
+  required: ['summaryType', 'summaryTypeLabel', 'main', 'insights', 'citations'],
+};
+
 async function callGeminiGenerateContent(apiKey, promptText, generationConfig) {
-  const url = `https://generativelanguage.googleapis.com/v1/models/${GEMINI_MODEL}:generateContent?key=${encodeURIComponent(apiKey)}`;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${encodeURIComponent(apiKey)}`;
   const body = {
     contents: [{ parts: [{ text: promptText }] }],
   };
@@ -550,7 +577,19 @@ function hasScholarlyMetadataSignals(p) {
   if (p.arxivId || p.pmcId || p.pmid) return true;
   if (p.source === 'arXiv' || p.source === 'PMC' || p.source === 'Nature') return true;
   if ((p.doi || '').trim()) return true;
-  if ((p.citationJournal || '').trim()) return true;
+  // Do not treat citation_journal_title alone as scholarly — blogs/plugins often set it to the site name.
+  return false;
+}
+
+/** URL paths that are almost never peer-reviewed papers (recipes, lifestyle, etc.). */
+function urlLooksLikeConsumerContentPage(url) {
+  if (!url || typeof url !== 'string') return false;
+  try {
+    const path = new URL(url).pathname.toLowerCase();
+    if (/\/recipes?(\/|$)/.test(path)) return true;
+    if (/\/(food|nutrition|cooking|wellness|lifestyle|beauty|shop|store|cart)(\/|$)/.test(path))
+      return true;
+  } catch (_) {}
   return false;
 }
 
@@ -558,8 +597,13 @@ function shouldSummarizeAsWebsitePage(p) {
   if (!p) return true;
   if (p.pageKind === 'webpage' || p.source === 'WebPage') return true;
   if (p.source === 'Generic PDF' || p.pageKind === 'pdf') return true;
+  if (urlLooksLikeConsumerContentPage(p.url) && !hasScholarlyMetadataSignals(p)) return true;
   // Blogs/recipes often expose citation_title without DOI, journal, or venue — not a research paper.
-  if (p.pageKind === 'article' && p.source === 'WebArticle' && !hasScholarlyMetadataSignals(p)) {
+  if (
+    p.pageKind === 'article' &&
+    (p.source === 'WebArticle' || p.source === 'Generic Research') &&
+    !hasScholarlyMetadataSignals(p)
+  ) {
     return true;
   }
   if (p.pageKind === 'article') return false;
@@ -683,9 +727,18 @@ async function handleSummarization(paper, apiKey) {
     ${jsonInstructions}
   `;
 
-  const textContent = await callGeminiGenerateContent(apiKey, prompt, {
-    responseMimeType: 'application/json',
-  });
+  let textContent;
+  try {
+    textContent = await callGeminiGenerateContent(apiKey, prompt, {
+      responseMimeType: 'application/json',
+      responseJsonSchema: SUMMARY_RESPONSE_JSON_SCHEMA,
+    });
+  } catch (schemaErr) {
+    console.warn('ResearchPulse: JSON schema request failed, retrying JSON MIME only', schemaErr);
+    textContent = await callGeminiGenerateContent(apiKey, prompt, {
+      responseMimeType: 'application/json',
+    });
+  }
 
   try {
     const raw = extractJsonFromGeminiText(textContent);

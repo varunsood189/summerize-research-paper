@@ -60,6 +60,7 @@ const quickAsksChips = document.getElementById('quick-asks-chips');
 const similarHistoryCard = document.getElementById('similar-history-card');
 const similarHistoryList = document.getElementById('similar-history-list');
 const similarHistoryEmpty = document.getElementById('similar-history-empty');
+const similarHistoryRefreshBtn = document.getElementById('similar-history-refresh-btn');
 const summaryMetaStrip = document.getElementById('summary-meta-strip');
 const summaryTypeLine = document.getElementById('summary-type-line');
 const summaryCitationsDl = document.getElementById('summary-citations-dl');
@@ -919,6 +920,17 @@ if (discardDraftBtn) {
   discardDraftBtn.onclick = async () => {
     if (!window.confirm('Discard the saved draft? This only removes the in-browser draft, not .txt files you already downloaded.')) return;
     await discardDraftSession();
+  };
+}
+
+if (similarHistoryRefreshBtn) {
+  similarHistoryRefreshBtn.onclick = async () => {
+    similarHistoryRefreshBtn.disabled = true;
+    try {
+      await renderSimilarHistory();
+    } finally {
+      similarHistoryRefreshBtn.disabled = false;
+    }
   };
 }
 
