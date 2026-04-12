@@ -1,0 +1,88 @@
+{
+  "manifest_version": 3,
+  "name": "ResearchPulse",
+  "version": "1.1.0",
+  "description": "Summarize research articles and research-related web pages, with Q&A and citations, powered by Gemini.",
+  "permissions": [
+    "sidePanel",
+    "storage",
+    "activeTab",
+    "scripting",
+    "tabs"
+  ],
+  "host_permissions": [
+    "<all_urls>",
+    "http://127.0.0.1/*",
+    "http://localhost/*",
+    "https://export.arxiv.org/*",
+    "https://generativelanguage.googleapis.com/*"
+  ],
+  "background": {
+    "service_worker": "service-worker.js"
+  },
+  "side_panel": {
+    "default_path": "sidepanel.html"
+  },
+  "action": {
+    "default_title": "Open ResearchPulse Side Panel"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "*://*.mdpi.com/*",
+        "*://arxiv.org/*",
+        "*://*.arxiv.org/*",
+        "*://*.nature.com/*",
+        "*://*.ieee.org/*",
+        "*://*.semanticscholar.org/*",
+        "*://*.pubmed.ncbi.nlm.nih.gov/*",
+        "*://pmc.ncbi.nlm.nih.gov/*",
+        "*://*.ncbi.nlm.nih.gov/*",
+        "*://scholar.google.com/*",
+        "*://*.base-search.net/*",
+        "*://base-search.net/*",
+        "*://core.ac.uk/*",
+        "*://*.core.ac.uk/*",
+        "*://*.doaj.org/*",
+        "*://doaj.org/*",
+        "*://*.plos.org/*",
+        "*://plos.org/*",
+        "*://*.researchgate.net/*",
+        "*://researchgate.net/*",
+        "*://*.academia.edu/*",
+        "*://academia.edu/*",
+        "*://*.mendeley.com/*",
+        "*://mendeley.com/*",
+        "*://*.jstor.org/*",
+        "*://jstor.org/*",
+        "*://*.sciencedirect.com/*",
+        "*://sciencedirect.com/*",
+        "*://link.springer.com/*",
+        "*://*.springer.com/*",
+        "*://*.scopus.com/*",
+        "*://scopus.com/*",
+        "*://*.webofscience.com/*",
+        "*://webofscience.com/*",
+        "*://*.science.gov/*",
+        "*://science.gov/*",
+        "*://*.loc.gov/*",
+        "*://loc.gov/*",
+        "*://*.worldcat.org/*",
+        "*://worldcat.org/*",
+        "*://eric.ed.gov/*",
+        "*://*.eric.ed.gov/*"
+      ],
+      "exclude_matches": [
+        "https://chrome.google.com/webstore/*",
+        "https://chromewebstore.google.com/*"
+      ],
+      "js": ["content-script.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}

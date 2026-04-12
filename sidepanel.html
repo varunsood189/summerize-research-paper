@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ResearchPulse</title>
+  <link rel="stylesheet" href="sidepanel.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="app-container">
+    <header>
+      <div class="logo-area">
+        <span class="logo-text">ResearchPulse</span>
+        <div class="pulse-line"></div>
+      </div>
+      <button id="settings-btn" class="icon-btn" title="Settings">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 15a3 3 0 100-6 3 3 0 000 6z"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1V12a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+      </button>
+    </header>
+
+    <main id="main-content">
+      <div id="status-card" class="card glass">
+        <div id="paper-info">
+          <h2 id="paper-title">No source loaded</h2>
+          <p id="paper-authors" class="muted">Open a research article or page, or paste a URL below.</p>
+        </div>
+        <div class="arxiv-load card glass subtle">
+          <p class="muted small-label">Paste: arXiv (abs or PDF), PMC, or publisher pages with citation meta (e.g. MDPI). Aggregator search pages (Google Scholar, Semantic Scholar, BASE, CORE, …) work best with “Use current tab,” not paste. Subscription sites may only show a login wall to automated fetches.</p>
+          <div class="input-row">
+            <input type="text" id="arxiv-url-input" placeholder="arXiv / PMC / MDPI article URL…">
+            <button type="button" id="load-arxiv-btn" class="secondary-btn">Load</button>
+          </div>
+          <button type="button" id="load-from-tab-btn" class="linkish-btn">Use current tab URL</button>
+        </div>
+        <div id="draft-banner" class="draft-banner hidden card glass subtle">
+          <p class="muted small-label">You have a saved session (summary + Q&amp;A). Resume here anytime, or use “Save chat” / “Download .txt” in the summary view to keep a copy on your computer.</p>
+          <div class="draft-banner-actions">
+            <button type="button" id="resume-draft-btn" class="secondary-btn">Resume where I left off</button>
+            <button type="button" id="discard-draft-btn" class="linkish-btn">Discard draft</button>
+          </div>
+        </div>
+        <div id="similar-history-card" class="similar-history-card hidden card glass subtle">
+          <h3 class="similar-history-title">Saved chats (most similar first)</h3>
+          <p id="similar-history-empty" class="muted small-label hidden">No saved chats yet. Use “Save chat” after a summary.</p>
+          <ul id="similar-history-list" class="similar-history-list" aria-label="Saved chats ordered by similarity to current source"></ul>
+        </div>
+        <div class="actions">
+          <button id="summarize-btn" class="primary-btn pulse-on-hover" disabled>
+            <span>Summarize Research</span>
+          </button>
+        </div>
+      </div>
+
+      <div id="summary-container" class="hidden">
+        <div class="card glass slide-up">
+          <div class="summary-toolbar summary-toolbar--wide">
+            <button type="button" id="back-to-search-btn" class="linkish-btn small-btn" title="Return to source and URL">← Back to source</button>
+            <h3>Summary</h3>
+            <div class="summary-toolbar-actions">
+              <button type="button" id="save-chat-btn" class="secondary-btn small-btn" title="Save to browser list and download a .txt file">Save chat</button>
+              <button type="button" id="download-txt-btn" class="secondary-btn small-btn" title="Download summary and Q&amp;A as a text file">Download .txt</button>
+              <button type="button" id="copy-output-btn" class="secondary-btn small-btn" title="Copy summary and insights">Copy</button>
+            </div>
+          </div>
+          <div id="summary-meta-strip" class="summary-meta-strip hidden" aria-live="polite">
+            <p id="summary-type-line" class="summary-type-line"></p>
+            <dl id="summary-citations-dl" class="summary-citations-dl hidden"></dl>
+          </div>
+          <div id="summary-content" class="content-area"></div>
+        </div>
+
+        <div class="card glass slide-up delay-1">
+          <h3>Key Insights</h3>
+          <ul id="insights-list" class="styled-list"></ul>
+        </div>
+
+        <div class="card glass slide-up delay-2">
+          <h3>Ask a Question</h3>
+          <div id="quick-asks" class="quick-asks">
+            <p class="muted small-label">Quick asks (tap to send)</p>
+            <div id="quick-asks-chips" class="quick-asks-chips" role="group" aria-label="Suggested questions"></div>
+          </div>
+          <div class="input-group">
+            <input type="text" id="chat-input" placeholder="Ask about results, methods, or this page…">
+            <button id="send-btn" class="icon-btn">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <div id="summary-followups" aria-live="polite"></div>
+      </div>
+
+      <div id="loading-state" class="hidden">
+        <div class="loader-container">
+          <div class="shimmer"></div>
+          <p>Generating summary with Gemini…</p>
+        </div>
+      </div>
+    </main>
+
+    <!-- Settings Overlay -->
+    <div id="settings-overlay" class="overlay hidden">
+      <div class="glass settings-modal slide-up">
+        <header>
+          <h2>Configuration</h2>
+          <button id="close-settings" class="icon-btn">&times;</button>
+        </header>
+        <div class="form-group">
+          <label for="api-key">Gemini API Key</label>
+          <input type="password" id="api-key" placeholder="Enter your Gemini API key">
+          <p class="hint">Your key is stored locally in your browser.</p>
+        </div>
+        <button id="save-settings" class="primary-btn">Save Settings</button>
+      </div>
+    </div>
+  </div>
+  <script src="sidepanel.js"></script>
+</body>
+</html>
