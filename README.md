@@ -67,6 +67,8 @@ icons/             # Extension icons (add these locally)
 - Summaries and questions are sent to **Google’s Generative Language API** using **your** API key.
 - Saved chats and drafts are stored **locally** in the browser unless you export `.txt`.
 
+Video: https://youtu.be/BeKeGpQCgl4
+
 ## License
 
 [MIT](LICENSE) — see `LICENSE` in the repository root.
